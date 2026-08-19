@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>alata pemburu tobrut</title>
+<style>
+  :root{
+    --bg1:#1a0f08;
+    --bg2:#3d2410;
+    --sand:#c9a56a;
+    --accent:#ff8c3b;
+    --accent2:#ffd166;
+    --panel:#241608ee;
+    --danger:#e63946;
+  }
+  html,body{height:100%;}
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 20%, #d1b07a, #b98d5a 52%, #8a653a 100%);
+    font-family:'Segoe UI', Tahoma, sans-serif;
+    color:var(--sand);
+  }
+  h1{
+    margin:0;
+    font-size:clamp(16px, 2.2vw, 26px);
+    letter-spacing:1px;
+    color:var(--accent2);
+    text-shadow:0 2px 8px #000a;
+    white-space:nowrap;
+  }
+  #topbar{
+    position:fixed;
+    top:14px; left:14px; right:14px;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    pointer-events:none;
+  }
+  #hud{
+    display:flex;
+    gap:20px;
+    background:var(--panel);
+    padding:8px 18px;
+    border-radius:12px;
+    border:1px solid #6b3f1a;
+    font-size:14px;
+    font-weight:600;
+    pointer-events:auto;
+  }
+  #hud span{color:var(--accent2);}
+  #wrap{
+    position:fixed;
+    inset:0;
+  }
+  canvas{
+    display:block;
+    width:100vw;
+    height:100vh;
+    background:
+      repeating-linear-gradient(45deg, #e7ce96 0 20px, #d9b779 20px 40px);
+    touch-action:none;
+  }
+  #overlay{
+    position:fixed; inset:0;
+    z-index:10;
+    background:#150c05ee;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    text-align:center;
+    padding:20px;
+  }
+  #overlay h2{margin:0;color:var(--danger);font-size:28px;}
+  #overlay p{margin:0;color:var(--sand);font-size:14px;max-width:360px;}
+  button{
+    background:linear-gradient(180deg, var(--accent), #c9611c);
+    color:#1a0f08;
+    border:none;
+    font-weight:700;
+    font-size:16px;
+    padding:12px 28px;
+    border-radius:10px;
+    cursor:pointer;
+    box-shadow:0 4px 0 #7a3b0e;
+    transition:transform .05s;
+  }
+  button:active{transform:translateY(3px);box-shadow:0 1px 0 #7a3b0e;}
+  #settingsBtn{
+    position:fixed;
+    right:20px; bottom:20px;
+    z-index:20;
+    padding:10px 14px;
+    font-size:13px;
+    border-radius:10px;
+    background:rgba(36,22,8,0.9);
+    color:var(--sand);
+    border:1px solid #6b3f1a;
+    box-shadow:none;
+  }
+  #settingsPanel{
+    position:fixed;
+    right:20px; bottom:70px;
+    z-index:18;
+    width:220px;
+    background:rgba(36,22,8,0.96);
+    border:1px solid #6b3f1a;
+    border-radius:12px;
+    padding:14px 14px 12px;
+    display:none;
+    box-shadow:0 12px 30px rgba(0,0,0,0.35);
+  }
+  #settingsPanel.open{display:block;}
+  .setting-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:14px;
+    color:var(--sand);
+    margin-bottom:8px;
+  }
+  .switch {
+    position:relative;
+    width:48px; height:28px;
+    display:inline-block;
+  }
+  .switch input{display:none;}
+  .slider{
+    position:absolute; inset:0;
+    border-radius:999px;
+    background:#664425;
+    transition:.2s ease;
+  }
+  .slider::before{
+    content:"";
+    position:absolute;
+    width:20px; height:20px; left:4px; top:4px;
+    border-radius:50%;
+    background:#f4d79b;
+    transition:.2s ease;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .slider{background:#ff8c3b;}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
+  #controls{
+    position:fixed;
+    left:18px; bottom:18px;
+    z-index:12;
+    display:none;
+    user-select:none;
+    touch-action:none;
+  }
+  #controls.visible{display:block;}
+  .analog-base{
+    position:relative;
+    width:132px;
+    height:132px;
+    border-radius:50%;
+    border:2px solid rgba(255, 209, 102, 0.55);
+    background:rgba(255, 178, 71, 0.08);
+    box-shadow:inset 0 0 18px rgba(255,200,120,0.15), 0 14px 22px rgba(0,0,0,0.2);
+    overflow:hidden;
+  }
+  .analog-base::before{
+    content:"";
+    position:absolute;
+    inset:12px;
+    border:2px solid rgba(255, 209, 102, 0.18);
+    border-radius:50%;
+  }
+  .analog-thumb{
+    position:absolute;
+    left:50%; top:50%;
+    width:42px; height:42px;
+    border-radius:50%;
+    transform:translate(-50%, -50%);
+    background:radial-gradient(circle at 30% 30%, #ffe3a8, #f9a13d 45%, #7a3b0e 100%);
+    border:2px solid rgba(255, 231, 173, 0.8);
+    box-shadow:0 8px 16px rgba(0,0,0,0.25);
+  }
+  #hint{
+    position:fixed;
+    left:14px; bottom:14px;
+    z-index:5;
+    font-size:12px;
+    opacity:.65;
+    max-width:340px;
+  }
+  @media (hover:none) and (pointer:coarse){
+    #hint{ bottom:150px; }
+  }
+</style>
+</head>
+<body>
+  <div id="topbar">
+    <h1>alata pemburu tobrut</h1>
+    <div id="hud">
+      <div>Skor: <span id="score">0</span></div>
+      <div>Level: <span id="level">1</span></div>
+      <div>Nyawa: <span id="lives">3</span></div>
+    </div>
+  </div>
+
+  <div id="wrap">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div id="overlay">
+    <h2>Kalajengking Pemburu Telur</h2>
+    <p>Arahkan kalajengking dengan tombol panah / WASD (atau tombol di layar) untuk memakan semua telur. Hindari kalajengking musuh berwarna gelap!</p>
+    <button id="startBtn">Mulai Main</button>
+  </div>
+
+  <button id="settingsBtn" type="button">⚙️ Setting</button>
+  <div id="settingsPanel">
+    <div class="setting-row">
+      <span>Joystick</span>
+      <label class="switch" aria-label="Aktifkan joystick">
+        <input id="joystickToggle" type="checkbox" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div id="controls" aria-label="Kontrol analog mobile">
+    <div class="analog-base" id="analogPad" aria-label="Analog stick">
+      <div class="analog-thumb" id="analogThumb"></div>
+    </div>
+  </div>
+  <div id="hint">Tip: kecepatan kalajengking meningkat tiap kali kamu naik level. Skor bertambah dari telur yang dimakan.</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const startBtn = document.getElementById('startBtn');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
+const livesEl = document.getElementById('lives');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const joystickToggle = document.getElementById('joystickToggle');
+const controls = document.getElementById('controls');
+
+let W, H;
+function resizeCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // jaga posisi entitas tetap di dalam layar setelah resize
+  if(typeof player !== 'undefined' && player){
+    player.x = Math.min(player.x, W-PLAYER_HITBOX);
+    player.y = Math.min(player.y, H-PLAYER_HITBOX);
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ---------- Sprite images (drawn as SVG data URIs -> gambar asli, bukan teks) ----------
+function svgToImage(svg){
+  const img = new Image();
+  img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+  return img;
+}
+
+const scorpionSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <g>
+    <ellipse cx="55" cy="55" rx="22" ry="15" fill="#c9611c" stroke="#5a2c0a" stroke-width="2"/>
+    <ellipse cx="32" cy="52" rx="10" ry="8" fill="#e08a3c" stroke="#5a2c0a" stroke-width="2"/>
+    <path d="M22 46 Q6 40 8 30 Q10 34 18 40" fill="#c9611c" stroke="#5a2c0a" stroke-width="2"/>
+    <path d="M22 60 Q6 66 8 76 Q10 72 18 66" fill="#c9611c" stroke="#5a2c0a" stroke-width="2"/>
+    <circle cx="6" cy="28" r="4" fill="#c9611c" stroke="#5a2c0a" stroke-width="1.5"/>
+    <circle cx="6" cy="78" r="4" fill="#c9611c" stroke="#5a2c0a" stroke-width="1.5"/>
+    <path d="M60 45 Q80 30 88 15 Q92 4 84 2 Q86 10 78 16" fill="none" stroke="#5a2c0a" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="84" cy="2" r="4" fill="#5a2c0a"/>
+    <line x1="40" y1="42" x2="30" y2="30" stroke="#5a2c0a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="42" y1="66" x2="32" y2="78" stroke="#5a2c0a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="55" y1="40" x2="48" y2="24" stroke="#5a2c0a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="55" y1="70" x2="48" y2="86" stroke="#5a2c0a" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="30" cy="48" r="2.5" fill="#1a0f08"/>
+    <circle cx="30" cy="56" r="2.5" fill="#1a0f08"/>
+  </g>
+</svg>`;
+
+const enemyScorpionSVG = scorpionSVG.replace(/#c9611c/g,'#3a2a2a').replace(/#e08a3c/g,'#4a3535');
+
+const eggImg = new Image();
+eggImg.src = 'tobrut.png';
+
+const playerSprite = svgToImage(scorpionSVG);
+let playerImg = playerSprite;
+// Coba muat foto pengguna bernama `kalajengking.png` di folder proyek.
+// Jika berhasil, gunakan foto tersebut sebagai sprite pemain; jika gagal, tetap pakai SVG.
+const userPhoto = new Image();
+userPhoto.src = 'kalajengking.png';
+userPhoto.onload = () => { playerImg = userPhoto; console.log('kalajengking.png loaded, using it as player sprite'); };
+userPhoto.onerror = () => { console.log('kalajengking.png not found — using SVG fallback'); };
+const enemyImg = svgToImage(enemyScorpionSVG);
+
+// ---------- Game state ----------
+const SIZE = 72;
+// Hitbox pemain = area collision yang SAMA dengan area yang dipakai untuk menggambar sprite,
+// supaya visual dan logic saling sinkron (sebelumnya beda ukuran sehingga "kena" secara visual
+// tapi tidak terdeteksi secara logic).
+const PLAYER_HITBOX = SIZE * 1.1; // area gerak/tabrakan pemain
+const PLAYER_VISUAL_SCALE_W = 1.9; // rasio lebar sprite terhadap SIZE
+const PLAYER_VISUAL_SCALE_H = 2.5; // rasio tinggi sprite terhadap SIZE
+let player, eggs, enemies, score, level, lives, running, keys, lastMove, moveInterval, dir, animT;
+let speechText = '';
+let speechTimer = 0;
+
+function resetGame(){
+  player = { x: W/2 - PLAYER_HITBOX/2, y: H/2 - PLAYER_HITBOX/2, dir: 'right', speed: 3.2 };
+  eggs = [];
+  enemies = [];
+  score = 0;
+  level = 1;
+  lives = 3;
+  animT = 0;
+  speechText = '';
+  speechTimer = 0;
+  spawnEggs();
+  spawnEnemies();
+  updateHUD();
+}
+
+function rand(min, max){ return Math.random() * (max-min) + min; }
+
+function spawnEggs(){
+  eggs = [];
+  const count = 4 + level;
+  for(let i=0;i<count;i++){
+    eggs.push({
+      x: rand(20, W-20-SIZE*1.1),
+      y: rand(20, H-20-SIZE*1.1),
+      s: SIZE*1.1
+    });
+  }
+}
+
+function spawnEnemies(){
+  enemies = [];
+  const count = Math.min(1 + Math.floor(level/2), 5);
+  for(let i=0;i<count;i++){
+    enemies.push({
+      x: rand(0, W-SIZE),
+      y: rand(0, H-SIZE),
+      vx: rand(-1,1) * (1.2 + level*0.15) || 1,
+      vy: rand(-1,1) * (1.2 + level*0.15) || 1,
+    });
+  }
+}
+
+function updateHUD(){
+  scoreEl.textContent = score;
+  levelEl.textContent = level;
+  livesEl.textContent = lives;
+}
+
+// ---------- Input ----------
+keys = {};
+const analogPad = document.getElementById('analogPad');
+const analogThumb = document.getElementById('analogThumb');
+let analogPointerId = null;
+
+function updateJoystickVisibility(){
+  if(!controls || !joystickToggle) return;
+  const enabled = joystickToggle.checked;
+  controls.classList.toggle('visible', enabled);
+  if(!enabled){
+    resetAnalogStick();
+  }
+}
+
+function clearMovementKeys(){
+  keys.up = false;
+  keys.down = false;
+  keys.left = false;
+  keys.right = false;
+}
+
+function updateAnalogStick(clientX, clientY){
+  if(!analogPad || !analogThumb) return;
+  const rect = analogPad.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const dx = clientX - centerX;
+  const dy = clientY - centerY;
+  const maxRadius = rect.width * 0.32;
+  const dist = Math.min(Math.hypot(dx, dy), maxRadius);
+  const angle = Math.atan2(dy, dx || 1);
+  const clampedX = Math.cos(angle) * dist;
+  const clampedY = Math.sin(angle) * dist;
+
+  analogThumb.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`;
+
+  const deadZone = 12;
+  clearMovementKeys();
+  if(Math.abs(clampedX) > deadZone) keys.right = clampedX > 0;
+  if(Math.abs(clampedX) > deadZone) keys.left = clampedX < 0;
+  if(Math.abs(clampedY) > deadZone) keys.down = clampedY > 0;
+  if(Math.abs(clampedY) > deadZone) keys.up = clampedY < 0;
+}
+
+function resetAnalogStick(){
+  analogPointerId = null;
+  if(analogThumb){ analogThumb.style.transform = 'translate(-50%, -50%)'; }
+  clearMovementKeys();
+}
+
+settingsBtn.addEventListener('click', ()=>{
+  settingsPanel.classList.toggle('open');
+});
+
+joystickToggle.addEventListener('change', updateJoystickVisibility);
+
+window.addEventListener('keydown', e=>{
+  const map = {ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+               w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right'};
+  if(map[e.key]){ keys[map[e.key]] = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', e=>{
+  const map = {ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+               w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right'};
+  if(map[e.key]){ keys[map[e.key]] = false; }
+});
+
+if(analogPad){
+  analogPad.addEventListener('pointerdown', e=>{
+    analogPointerId = e.pointerId;
+    analogPad.setPointerCapture(e.pointerId);
+    updateAnalogStick(e.clientX, e.clientY);
+  });
+
+  analogPad.addEventListener('pointermove', e=>{
+    if(analogPointerId !== e.pointerId) return;
+    updateAnalogStick(e.clientX, e.clientY);
+  });
+
+  analogPad.addEventListener('pointerup', resetAnalogStick);
+  analogPad.addEventListener('pointercancel', resetAnalogStick);
+  analogPad.addEventListener('pointerleave', () => {
+    if(analogPointerId === null) resetAnalogStick();
+  });
+}
+
+updateJoystickVisibility();
+
+// ---------- Loop ----------
+function circleHit(ax,ay,as,bx,by,bs){
+  const dx = (ax+as/2)-(bx+bs/2);
+  const dy = (ay+as/2)-(by+bs/2);
+  const dist = Math.sqrt(dx*dx+dy*dy);
+  return dist < (as+bs)/2 * 0.85;
+}
+
+function loseLife(){
+  lives--;
+  updateHUD();
+  if(lives<=0){
+    gameOver();
+  } else {
+    player.x = W/2 - PLAYER_HITBOX/2;
+    player.y = H/2 - PLAYER_HITBOX/2;
+  }
+}
+
+function gameOver(){
+  running = false;
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `<h2>Game Over</h2><p>Skor akhir kamu: <b style="color:#ffd166">${score}</b> — Level ${level}</p><button id="startBtn">Main Lagi</button>`;
+  document.getElementById('startBtn').addEventListener('click', startGame);
+}
+
+function nextLevel(){
+  level++;
+  spawnEggs();
+  spawnEnemies();
+  updateHUD();
+}
+
+function update(){
+  animT += 0.15;
+  const spd = player.speed;
+  let moved = false;
+  if(keys.up){ player.y -= spd; player.dir='up'; moved=true; }
+  if(keys.down){ player.y += spd; player.dir='down'; moved=true; }
+  if(keys.left){ player.x -= spd; player.dir='left'; moved=true; }
+  if(keys.right){ player.x += spd; player.dir='right'; moved=true; }
+
+  player.x = Math.max(0, Math.min(W-PLAYER_HITBOX, player.x));
+  player.y = Math.max(0, Math.min(H-PLAYER_HITBOX, player.y));
+
+  let nearEgg = false;
+  for(let i=eggs.length-1;i>=0;i--){
+    const eg = eggs[i];
+    const dx = (player.x + PLAYER_HITBOX/2) - (eg.x + eg.s/2);
+    const dy = (player.y + PLAYER_HITBOX/2) - (eg.y + eg.s/2);
+    const dist = Math.hypot(dx, dy);
+    if(dist < (PLAYER_HITBOX + eg.s) * 0.75){
+      nearEgg = true;
+    }
+    if(circleHit(player.x, player.y, PLAYER_HITBOX, eg.x,eg.y,eg.s)){
+      eggs.splice(i,1);
+      score += 10;
+      updateHUD();
+    }
+  }
+  if(nearEgg){
+    speechText = 'aku entup ya';
+    speechTimer = 0.9;
+  } else if(speechTimer > 0){
+    speechTimer -= 0.016;
+    if(speechTimer <= 0){
+      speechText = '';
+    }
+  }
+  if(eggs.length===0){
+    nextLevel();
+  }
+
+  // enemies move
+  enemies.forEach(en=>{
+    en.x += en.vx * (1+level*0.1);
+    en.y += en.vy * (1+level*0.1);
+    if(en.x<0||en.x>W-SIZE) en.vx*=-1;
+    if(en.y<0||en.y>H-SIZE) en.vy*=-1;
+    en.x = Math.max(0,Math.min(W-SIZE,en.x));
+    en.y = Math.max(0,Math.min(H-SIZE,en.y));
+    if(circleHit(player.x, player.y, PLAYER_HITBOX, en.x,en.y,SIZE)){
+      loseLife();
+    }
+  });
+}
+
+function rotationFor(dir){
+  switch(dir){
+    case 'up': return -Math.PI/2;
+    case 'down': return Math.PI/2;
+    case 'left': return Math.PI;
+    case 'right': return 0;
+  }
+  return 0;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(!player) return;
+
+  // eggs
+  eggs.forEach(eg=>{
+    ctx.drawImage(eggImg, eg.x, eg.y, eg.s, eg.s);
+  });
+
+  // enemies
+  enemies.forEach(en=>{
+    ctx.save();
+    ctx.translate(en.x+SIZE/2, en.y+SIZE/2);
+    ctx.rotate(Math.atan2(en.vy, en.vx));
+    ctx.drawImage(enemyImg, -SIZE/2, -SIZE/2, SIZE, SIZE);
+    ctx.restore();
+  });
+
+  // player (gambar custom) - dicerminkan horizontal saat bergerak ke kiri
+  // PENTING: titik tengah sprite (translate) HARUS sama dengan titik tengah PLAYER_HITBOX
+  // yang dipakai di fungsi update()/circleHit(), supaya yang terlihat di layar sama dengan
+  // area yang dipakai untuk deteksi tabrakan telur/musuh.
+  ctx.save();
+  const bob = Math.sin(animT*2)*2;
+  const pw = SIZE * PLAYER_VISUAL_SCALE_W, ph = SIZE * PLAYER_VISUAL_SCALE_H;
+  const hitboxCenterX = player.x + PLAYER_HITBOX/2;
+  const hitboxCenterY = player.y + PLAYER_HITBOX/2;
+  ctx.translate(hitboxCenterX, hitboxCenterY + bob);
+  if(player.dir==='left'){
+    ctx.scale(-1,1);
+  }
+  ctx.drawImage(playerImg, -pw/2, -ph/2, pw, ph);
+  ctx.restore();
+
+  if(speechText && speechTimer > 0){
+    const alpha = Math.min(1, speechTimer / 0.5);
+    ctx.save();
+    ctx.font = 'bold 18px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(255, 236, 170, ${alpha})`;
+    ctx.strokeStyle = `rgba(80, 45, 10, ${alpha})`;
+    ctx.lineWidth = 3;
+    ctx.strokeText(speechText, hitboxCenterX, player.y - 12);
+    ctx.fillText(speechText, hitboxCenterX, player.y - 12);
+    ctx.restore();
+  }
+}
+
+let rafId;
+function loop(){
+  if(!running) return;
+  update();
+  draw();
+  rafId = requestAnimationFrame(loop);
+}
+
+function startGame(){
+  overlay.style.display = 'none';
+  resetGame();
+  running = true;
+  cancelAnimationFrame(rafId);
+  loop();
+}
+
+startBtn.addEventListener('click', startGame);
+
+// Set ukuran canvas full layar sejak awal (sebelum game dimulai)
+resizeCanvas();
+draw();
+</script>
+</body>
+</html>
